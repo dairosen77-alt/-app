@@ -24,11 +24,14 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Locate project & build APK
+      - name: Unzip & build APK
         run: |
-          PKG_PATH=$(find . -maxdepth 4 -name "package.json" -not -path "*/node_modules/*" | head -n 1)
+          mkdir -p extracted_app
+          find . -maxdepth 2 -name "*.zip" -exec unzip -o {} -d extracted_app \;
+
+          PKG_PATH=$(find . -maxdepth 5 -name "package.json" -not -path "*/node_modules/*" | head -n 1)
           if [ -z "$PKG_PATH" ]; then
-            echo "错误：未找到 package.json，请确认您上传的是解压后的项目文件夹，而不是单个 .zip 压缩包！"
+            echo "错误：解压后仍未找到 package.json"
             exit 1
           fi
           APP_DIR=$(dirname "$PKG_PATH")
