@@ -24,6 +24,10 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Install Android SDK 35
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
       - name: Unzip & build APK
         run: |
           mkdir -p extracted_app
@@ -31,7 +35,7 @@ jobs:
 
           PKG_PATH=$(find . -maxdepth 5 -name "package.json" -not -path "*/node_modules/*" | head -n 1)
           if [ -z "$PKG_PATH" ]; then
-            echo "错误：解压后仍未找到 package.json"
+            echo "错误：未找到 package.json"
             exit 1
           fi
           APP_DIR=$(dirname "$PKG_PATH")
@@ -51,9 +55,6 @@ jobs:
 
           npx cap add android || true
           npx cap sync android
-
-          sed -i 's/compileSdkVersion = 35/compileSdkVersion = 34/g' android/variables.gradle || true
-          sed -i 's/targetSdkVersion = 35/targetSdkVersion = 34/g' android/variables.gradle || true
 
           cd android
           chmod +x gradlew
