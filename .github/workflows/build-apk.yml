@@ -1,67 +1,49 @@
-name: Test Build APK (Fixed TS Version)
+name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Unzip Project
-      run: |
-        if ls *.zip 1> /dev/null 2>&1; then
-          mkdir extracted_folder
-          unzip -o *.zip -d extracted_folder
-          if [ $(ls -1 extracted_folder | wc -l) -eq 1 ] && [ -d "extracted_folder/$(ls -1 extracted_folder)" ]; then
-            mv extracted_folder/*/* .
-          else
-            mv extracted_folder/* .
-          fi
-          rm -rf extracted_folder
-          rm -f *.zip
-        fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Set up Java 21
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '21'
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Set up Node.js 22
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
+      - name: Install dependencies & build web app
+        run: |
+          npm install
+          npm run build
 
-    - name: Prepare Capacitor & Project
-      run: |
-        HTML_DIR=$(find . -name "index.html" -type f | head -n 1 | xargs dirname)
-        mkdir -p www
-        cp -r "$HTML_DIR"/* www/ 2>/dev/null || true
-        npm init -y
-        # 【关键修复】安装 Capacitor 时，强制指定兼容的 TypeScript 5.9.0 版本
-        npm install --legacy-peer-deps @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 typescript@5.9.0
+      - name: Initialize Capacitor & Android platform
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "韩语研习社" "com.korean.studio" --web-dir=dist || true
+          npx cap add android || true
+          npx cap sync android
 
-    - name: Build APK
-      run: |
-        # 【关键修复】在执行 cap init 前，再次确保 TypeScript 版本正确
-        npm install typescript@5.9.0
-        npx cap init "KoreanApp" "com.korean.app" --web-dir=www
-        npx cap add android
-        npx cap sync android
-        sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
-        cd android
-        chmod +x gradlew
-        ./gradlew wrapper --gradle-version 8.11.1
-        ./gradlew assembleDebug
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
-        path: "**/build/outputs/apk/debug/*.apk"
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: korean-studio-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
