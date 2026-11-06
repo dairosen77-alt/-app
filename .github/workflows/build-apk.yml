@@ -24,9 +24,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Locate project & build APK
         run: |
           PKG_PATH=$(find . -maxdepth 4 -name "package.json" -not -path "*/node_modules/*" | head -n 1)
