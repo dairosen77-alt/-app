@@ -1,4 +1,4 @@
-name: Test Build APK
+name: Test Build APK (Fixed TS Version)
 
 on:
   push:
@@ -44,10 +44,13 @@ jobs:
         mkdir -p www
         cp -r "$HTML_DIR"/* www/ 2>/dev/null || true
         npm init -y
-        npm install --legacy-peer-deps @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+        # 【关键修复】安装 Capacitor 时，强制指定兼容的 TypeScript 5.9.0 版本
+        npm install --legacy-peer-deps @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 typescript@5.9.0
 
     - name: Build APK
       run: |
+        # 【关键修复】在执行 cap init 前，再次确保 TypeScript 版本正确
+        npm install typescript@5.9.0
         npx cap init "KoreanApp" "com.korean.app" --web-dir=www
         npx cap add android
         npx cap sync android
